@@ -16,9 +16,9 @@ type Event struct {
 
 // Storage используем для хранения информации календаря событий
 type Storage struct {
-	mu     sync.RWMutex
+	Mu     sync.RWMutex
 	Events map[int][]*Event // user_id -> events
-	nextID int              // номер (ID) следующего Event
+	NextID int              // номер (ID) следующего Event
 }
 
 // Answer - ответ на запрос к календарю
