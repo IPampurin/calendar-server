@@ -32,6 +32,14 @@ type Storage struct {
 	NextID int              // номер (ID) следующего Event (счётчик событий)
 }
 
+// NewStorage создаёт новое хранилище
+func NewStorage() Repository {
+	return &Storage{
+		Events: make(map[int][]*Event),
+		NextID: 1,
+	}
+}
+
 // Create добавляет event в хранилище, возвращает ID event или ошибку
 func (s *Storage) Create(userID int, date time.Time, title, content string) (int, error) {
 
@@ -80,7 +88,7 @@ func (s *Storage) Update(event *Event) error {
 		return fmt.Errorf("пользователь с %d не найден", event.UserID)
 	}
 	if events == nil {
-		return fmt.Errorf("у пользователя с %d событий не найдено", event.UserID)
+		return fmt.Errorf("у пользователя с %d событий ваще не найдено", event.UserID)
 	}
 
 	for i := 0; i < len(events); i++ {
@@ -108,15 +116,15 @@ func (s *Storage) Delete(userID, eventID int) error {
 		return fmt.Errorf("пользователь с %d не найден", userID)
 	}
 	if events == nil {
-		return fmt.Errorf("у пользователя с %d событий не найдено", userID)
+		return fmt.Errorf("у пользователя с %d событий ваще не найдено", userID)
 	}
 
 	for i := 0; i < len(events); i++ {
 		// если нашли событие - удаляем событие
 		if eventID == events[i].ID {
-			events[i] = nil
-			s.Events[userID] = append(events[:i], events[i+1:]...)
-			// или events = slices.Delete(s.Events[userID], i, i+1)
+			copy(events[i:], events[i+1:])
+			s.Events[userID] = events[:len(events)-1]
+			// или s.Events[userID] = slices.Delete(s.Events[userID], i, i+1)
 			return nil
 		}
 	}
@@ -125,30 +133,109 @@ func (s *Storage) Delete(userID, eventID int) error {
 	return fmt.Errorf("событие с %d не найдено", eventID)
 }
 
+// dayNormalizer возвращает начало дня
+func dayNormalizer(t time.Time) time.Time {
+
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
 // возвращает перечень событий на день или ошибку
 func (s *Storage) GetForDay(userID int, date time.Time) ([]*Event, error) {
 
+	s.Mu.RLock()
+	defer s.Mu.Unlock()
+
+	events, ok := s.Events[userID]
+	if !ok {
+		return []*Event{}, fmt.Errorf("пользователь с %d не найден", userID)
+	}
+	if events == nil {
+		return []*Event{}, fmt.Errorf("у пользователя с %d событий ваще не найдено", userID)
+	}
+
+	eventsForDay := make([]*Event, 0)
+	fromDay := dayNormalizer(date)
+	toDay := fromDay.AddDate(0, 0, 1)
+
+	for i := 0; i < len(events); i++ {
+		if !events[i].Date.Before(fromDay) && events[i].Date.Before(toDay) {
+			eventsForDay = append(eventsForDay, events[i])
+		}
+	}
+
+	return eventsForDay, nil
+}
+
+// weekNormalizer возвращает начало недели
+func weekNormalizer(t time.Time) time.Time {
+
+	// находим начало дня
+	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	// находим понедельник
+	weekday := startOfDay.Weekday()
+	if weekday == 0 { // 0 == воскресенье
+		return startOfDay.AddDate(0, 0, -6) // начало предыдущего понедельника
+	}
+
+	return startOfDay.AddDate(0, 0, -int(weekday)+1)
 }
 
 // возвращает перечень событий на неделю или ошибку
 func (s *Storage) GetForWeek(userID int, date time.Time) ([]*Event, error) {
 
+	s.Mu.RLock()
+	defer s.Mu.Unlock()
+
+	events, ok := s.Events[userID]
+	if !ok {
+		return []*Event{}, fmt.Errorf("пользователь с %d не найден", userID)
+	}
+	if events == nil {
+		return []*Event{}, fmt.Errorf("у пользователя с %d событий ваще не найдено", userID)
+	}
+
+	eventsForWeek := make([]*Event, 0)
+	fromDay := weekNormalizer(date)
+	toDay := fromDay.AddDate(0, 0, 7)
+
+	for i := 0; i < len(events); i++ {
+		if !events[i].Date.Before(fromDay) && events[i].Date.Before(toDay) {
+			eventsForWeek = append(eventsForWeek, events[i])
+		}
+	}
+
+	return eventsForWeek, nil
+}
+
+// monthNormalizer возвращает начало месяца
+func monthNormalizer(t time.Time) time.Time {
+
+	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 }
 
 // возвращает перечень событий на месяц или ошибку
 func (s *Storage) GetForMonth(userID int, date time.Time) ([]*Event, error) {
 
-}
+	s.Mu.RLock()
+	defer s.Mu.Unlock()
 
-// NewStorage создаёт новое хранилище
-func NewStorage() Repository {
-	return &Storage{
-		Events: make(map[int][]*Event),
-		NextID: 1,
+	events, ok := s.Events[userID]
+	if !ok {
+		return []*Event{}, fmt.Errorf("пользователь с %d не найден", userID)
 	}
-}
+	if events == nil {
+		return []*Event{}, fmt.Errorf("у пользователя с %d событий ваще не найдено", userID)
+	}
 
-func InitDB() error {
+	eventsForMonth := make([]*Event, 0)
+	fromDay := monthNormalizer(date)
+	toDay := fromDay.AddDate(0, 1, 0)
 
-	return nil
+	for i := 0; i < len(events); i++ {
+		if !events[i].Date.Before(fromDay) && events[i].Date.Before(toDay) {
+			eventsForMonth = append(eventsForMonth, events[i])
+		}
+	}
+
+	return eventsForMonth, nil
 }

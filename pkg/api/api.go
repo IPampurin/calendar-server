@@ -1,18 +1,28 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
 
-func Init() {
+	"github.com/IPampurin/calendar-server/pkg/storage"
+)
 
-	http.HandleFunc("/api/create_event") // POST — создание нового события
+func Init(db storage.Repository) {
 
-	http.HandleFunc("/api/update_event") // POST — обновление существующего
+	http.HandleFunc("/create_event", CreateEventHandler) // POST — создание нового события
 
-	http.HandleFunc("/api/delete_event") // POST — удаление
+	http.HandleFunc("/update_event", UpdateEventHandler) // POST — обновление существующего
 
-	http.HandleFunc("/api/events_for_day") // GET — получить все события на день
+	http.HandleFunc("/delete_event", DeleteEventHandler) // POST — удаление
 
-	http.HandleFunc("/api/events_for_week") // GET — события на неделю
+	http.HandleFunc("/events_for_day", GetEventsForDayHandler) // GET — получить все события на день
 
-	http.HandleFunc("/api/events_for_month") // GET — события на месяц
+	http.HandleFunc("/events_for_week", GetEventsForWeekHandler) // GET — события на неделю
+
+	http.HandleFunc("/events_for_month", GetEventsForMonthHandler) // GET — события на месяц
+}
+
+// Answer - ответ на запрос к календарю
+type Answer struct {
+	ID    string `json:"id,omitempty"`
+	Error string `json:"error,omitempty"`
 }
