@@ -43,6 +43,9 @@ func NewStorage() Repository {
 // Create добавляет event в хранилище, возвращает ID event или ошибку
 func (s *Storage) Create(userID int, date time.Time, title, content string) (int, error) {
 
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+
 	// выполняем базовые проверки
 	if userID < 0 {
 		return 0, fmt.Errorf("ошибочный ID пользователя")
@@ -50,9 +53,6 @@ func (s *Storage) Create(userID int, date time.Time, title, content string) (int
 	if title == "" {
 		return 0, fmt.Errorf("поле title должно быть заполнено")
 	}
-
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
 
 	// проверяем, что память под слайс событий есть и пользователь существует
 	if _, ok := s.Events[userID]; !ok || s.Events[userID] == nil {
@@ -76,12 +76,12 @@ func (s *Storage) Create(userID int, date time.Time, title, content string) (int
 // Update обновляет event в хранилище, возвращает ошибку, если событие не найдено
 func (s *Storage) Update(event *Event) error {
 
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+
 	if event == nil {
 		return fmt.Errorf("событие не может быть nil")
 	}
-
-	s.Mu.Lock()
-	defer s.Mu.Unlock()
 
 	events, ok := s.Events[event.UserID]
 	if !ok {
@@ -143,7 +143,7 @@ func dayNormalizer(t time.Time) time.Time {
 func (s *Storage) GetForDay(userID int, date time.Time) ([]*Event, error) {
 
 	s.Mu.RLock()
-	defer s.Mu.Unlock()
+	defer s.Mu.RUnlock()
 
 	events, ok := s.Events[userID]
 	if !ok {
@@ -184,7 +184,7 @@ func weekNormalizer(t time.Time) time.Time {
 func (s *Storage) GetForWeek(userID int, date time.Time) ([]*Event, error) {
 
 	s.Mu.RLock()
-	defer s.Mu.Unlock()
+	defer s.Mu.RUnlock()
 
 	events, ok := s.Events[userID]
 	if !ok {
@@ -217,7 +217,7 @@ func monthNormalizer(t time.Time) time.Time {
 func (s *Storage) GetForMonth(userID int, date time.Time) ([]*Event, error) {
 
 	s.Mu.RLock()
-	defer s.Mu.Unlock()
+	defer s.Mu.RUnlock()
 
 	events, ok := s.Events[userID]
 	if !ok {
