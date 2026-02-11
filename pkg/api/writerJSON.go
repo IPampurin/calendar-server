@@ -13,12 +13,15 @@ func WriterJSON(w http.ResponseWriter, status int, data interface{}) {
 
 	js, err := json.Marshal(data)
 	if err != nil {
-		status = http.StatusInternalServerError
-		js = []byte(fmt.Sprintf(emergencyError, err))
+		// отправка при ошибке
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = fmt.Fprintf(w, emergencyError, err)
 		return
 	}
 
+	// нормальная отправка
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write(js)
+	_, _ = w.Write(js)
 }
