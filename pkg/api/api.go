@@ -7,11 +7,11 @@ import (
 )
 
 type API struct {
-	storage storage.Repository
+	Storage storage.Repository
 }
 
 func NewAPI(db storage.Repository) *API {
-	return &API{storage: db}
+	return &API{Storage: db}
 }
 
 func Init(db storage.Repository) {

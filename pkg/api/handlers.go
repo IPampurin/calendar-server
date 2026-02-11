@@ -56,6 +56,7 @@ func (api *API) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// валидируем входные данные
 	// парсим дату
 	date, err := time.Parse("2006-01-02", req.Date)
 	if err != nil {
@@ -64,8 +65,22 @@ func (api *API) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// проверяем id
+	if req.UserID <= 0 {
+		answer.Error = "user_id должен быть положительным числом"
+		WriterJSON(w, http.StatusBadRequest, answer) // 400
+		return
+	}
+
+	// проверяем title
+	if req.Title == "" {
+		answer.Error = "поле title должно быть заполнено"
+		WriterJSON(w, http.StatusBadRequest, answer) // 400
+		return
+	}
+
 	// вызываем storage
-	id, err := api.storage.Create(req.UserID, date, req.Title, req.Content)
+	id, err := api.Storage.Create(req.UserID, date, req.Title, req.Content)
 	if err != nil {
 		answer.Error = err.Error()
 		WriterJSON(w, http.StatusServiceUnavailable, answer) // 503
@@ -153,7 +168,7 @@ func (api *API) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// вызываем storage
-	if err := api.storage.Update(event); err != nil {
+	if err := api.Storage.Update(event); err != nil {
 		answer.Error = err.Error()
 		WriterJSON(w, http.StatusServiceUnavailable, answer) // 503
 		return
@@ -212,7 +227,7 @@ func (api *API) DeleteEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// вызываем storage
-	if err := api.storage.Delete(req.UserID, req.EventID); err != nil {
+	if err := api.Storage.Delete(req.UserID, req.EventID); err != nil {
 		answer.Error = err.Error()
 		WriterJSON(w, http.StatusServiceUnavailable, answer) // 503
 		return
@@ -255,7 +270,7 @@ func (api *API) GetEventsForDayHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// вызываем storage
-	events, err := api.storage.GetForDay(userID, date)
+	events, err := api.Storage.GetForDay(userID, date)
 	if err != nil {
 		answer.Error = err.Error()
 		WriterJSON(w, http.StatusServiceUnavailable, answer) // 503
@@ -299,7 +314,7 @@ func (api *API) GetEventsForWeekHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// вызываем storage
-	events, err := api.storage.GetForWeek(userID, date)
+	events, err := api.Storage.GetForWeek(userID, date)
 	if err != nil {
 		answer.Error = err.Error()
 		WriterJSON(w, http.StatusServiceUnavailable, answer) // 503
@@ -343,7 +358,7 @@ func (api *API) GetEventsForMonthHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// вызываем storage
-	events, err := api.storage.GetForMonth(userID, date)
+	events, err := api.Storage.GetForMonth(userID, date)
 	if err != nil {
 		answer.Error = err.Error()
 		WriterJSON(w, http.StatusServiceUnavailable, answer) // 503
