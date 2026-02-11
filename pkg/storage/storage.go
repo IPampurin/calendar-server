@@ -6,25 +6,6 @@ import (
 	"time"
 )
 
-// Repository - интерфейс, реализующий требуемые методы
-type Repository interface {
-	Create(userID int, date time.Time, title, content string) (int, error) // добавляет event в хранилище, возвращает ID event или ошибку
-	Update(event *Event) error                                             // обновляет event в хранилище, возвращает ошибку, если событие не найдено
-	Delete(userID, eventID int) error                                      // удаляет event из хранилища, возвращает ошибку, если событие не найдено
-	GetForDay(userID int, date time.Time) ([]*Event, error)                // возвращает перечень событий на день или ошибку
-	GetForWeek(userID int, date time.Time) ([]*Event, error)               // возвращает перечень событий на неделю или ошибку
-	GetForMonth(userID int, date time.Time) ([]*Event, error)              // возвращает перечень событий на месяц или ошибку
-}
-
-// Event описывает запись в календаре событий
-type Event struct {
-	ID      int       `json:"id"`                // id события (счётчик событий)
-	UserID  int       `json:"user_id"`           // id пользователя
-	Date    time.Time `json:"date"`              // дата события
-	Title   string    `json:"title"`             // заголовок события
-	Content string    `json:"content,omitempty"` // содержание события
-}
-
 // Storage используем для хранения информации календаря событий
 type Storage struct {
 	Mu     sync.RWMutex     // предполагаем конкурентный доступ к ресурсу
@@ -33,7 +14,7 @@ type Storage struct {
 }
 
 // NewStorage создаёт новое хранилище
-func NewStorage() Repository {
+func NewStorage() *Storage {
 	return &Storage{
 		Events: make(map[int][]*Event),
 		NextID: 1,
