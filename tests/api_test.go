@@ -129,8 +129,7 @@ func TestCalendarAPI_Integration(t *testing.T) {
             "content": "Новое описание"
         }`
 
-		resp, err := client.Post(server.URL+"/update_event", "application/json",
-			bytes.NewBufferString(body))
+		resp, err := client.Post(server.URL+"/update_event", "application/json", bytes.NewBufferString(body))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -152,9 +151,9 @@ func TestCalendarAPI_Integration(t *testing.T) {
 
 	// 5. Проверяем неделю
 	t.Run("GET events for week", func(t *testing.T) {
+
 		// создаём ещё одно событие через 2 дня
-		mock.Create(123, time.Date(2026, 1, 17, 0, 0, 0, 0, time.UTC),
-			"Ещё событие", "")
+		_, _ = mock.Create(123, time.Date(2026, 1, 17, 0, 0, 0, 0, time.UTC), "Ещё событие", "")
 
 		url := fmt.Sprintf("%s/events_for_week?user_id=123&date=2026-01-15", server.URL)
 		resp, err := client.Get(url)
@@ -169,7 +168,7 @@ func TestCalendarAPI_Integration(t *testing.T) {
 
 		eventsData, _ := json.Marshal(answer.Result)
 		var events []*storage.Event
-		json.Unmarshal(eventsData, &events)
+		_ = json.Unmarshal(eventsData, &events)
 
 		assert.Len(t, events, 2) // два события на неделе
 	})
@@ -181,8 +180,7 @@ func TestCalendarAPI_Integration(t *testing.T) {
             "event_id": 1
         }`
 
-		resp, err := client.Post(server.URL+"/delete_event", "application/json",
-			bytes.NewBufferString(body))
+		resp, err := client.Post(server.URL+"/delete_event", "application/json", bytes.NewBufferString(body))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -214,7 +212,7 @@ func TestCalendarAPI_Integration(t *testing.T) {
 
 		eventsData, _ := json.Marshal(answer.Result)
 		var events []*storage.Event
-		json.Unmarshal(eventsData, &events)
+		_ = json.Unmarshal(eventsData, &events)
 
 		assert.Len(t, events, 1) // только событие от 17.01
 	})
@@ -222,8 +220,7 @@ func TestCalendarAPI_Integration(t *testing.T) {
 	// 8. Негативные сценарии
 	t.Run("NEGATIVE: create with empty title", func(t *testing.T) {
 		body := `{"user_id":123,"date":"2026-01-15","title":""}`
-		resp, err := client.Post(server.URL+"/create_event", "application/json",
-			bytes.NewBufferString(body))
+		resp, err := client.Post(server.URL+"/create_event", "application/json", bytes.NewBufferString(body))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -232,8 +229,7 @@ func TestCalendarAPI_Integration(t *testing.T) {
 
 	t.Run("NEGATIVE: update non-existent event", func(t *testing.T) {
 		body := `{"id":999,"user_id":123,"date":"2026-01-15","title":"Test"}`
-		resp, err := client.Post(server.URL+"/update_event", "application/json",
-			bytes.NewBufferString(body))
+		resp, err := client.Post(server.URL+"/update_event", "application/json", bytes.NewBufferString(body))
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
